@@ -1,0 +1,63 @@
+<div class="flex flex-col h-full" (keydown)="onKeyDown($event)" tabindex="0">
+  <mat-progress-bar [value]="100 * currentPage/pages.length"></mat-progress-bar>
+  <div class="toolbar shadow-md">
+    <button id="menu-toggle" class="gap-2 px-2" (click)="toggleSideNav()">
+      <span class="material-icons text-white">
+        menu
+      </span>
+    </button>
+
+    <h1 class="flex-1 font-semibold text-2xl"
+      style="margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      {{pages[currentPage-1].title}}</h1>
+
+    <div class="controls none md:block">
+      <button class="px-2" [disabled]="currentPage == 1" (click)="currentPage = currentPage-1">
+        <span class="material-icons">
+          arrow_back_ios_new
+        </span>
+        <span class="hidden sm:block">Previous</span>
+      </button>
+
+      <button class="px-2" [disabled]="currentPage == pages.length" (click)="currentPage = currentPage+1">
+        <span class="hidden sm:block">Next</span>
+        <span class="material-icons">
+          arrow_forward_ios
+        </span>
+      </button>
+
+      <div class="hidden lg:block">
+        <button *ngIf="!isFullscreen; else exitFullscreenBtn" aria-label="Fullscreen" title="Fullscreen"
+          (click)="toggleFullscreen()">
+          <span class="material-icons">
+            zoom_out_map
+          </span>
+        </button>
+
+        <ng-template #exitFullscreenBtn>
+          <button title="Exit Fullscreen" aria-label="Exit Fullscreen" (click)="toggleFullscreen()">
+            <span class="material-icons">
+              close_fullscreen
+            </span>
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <mat-sidenav-container class="flex-1">
+    <mat-sidenav [(opened)]="isSideNavOpen">
+      <cdk-virtual-scroll-viewport #sidenavScrollViewport itemSize="50" style="width: 400px; height: 100%;">
+        <div *cdkVirtualFor="let section of sections, let index=index" style="height: 50px;">
+          <a [class.active]="isInSection(section)" (click)="currentPage = section.start" [title]="section.name">
+            <span style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{{section.name}}</span>
+          </a>
+        </div>
+      </cdk-virtual-scroll-viewport>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <app-content-viewport class="h-full" [pages]="pages" [page]="currentPage"></app-content-viewport>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

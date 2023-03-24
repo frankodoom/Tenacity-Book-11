@@ -1,0 +1,53 @@
+.toolbar {
+  @apply p-2;
+  @apply gap-4 lg:gap-8;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+#menu-toggle {
+  background-color: #1a73d9;
+  min-width: 3.6rem;
+  height: 3.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls {
+  @apply gap-1;
+  display: flex;
+}
+
+.controls button {
+  height: 3.6em;
+  min-width: 3.6em;
+  border-radius: 3px;
+  background-color: #1a73d90d;
+  color: #1a73d9;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+}
+
+mat-sidenav a {
+  @apply font-medium text-base px-8;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  border-bottom: solid 1px #e9e4ed;
+  height: 50px;
+  cursor: pointer;
+}
+
+mat-sidenav a.active {
+  background-color: #1a73d91a;
+  color: #1a73d9;
+  cursor: initial;
+}

@@ -1,0 +1,161 @@
+{
+  "achievement": {
+    "entries": [
+        {
+            "entry": "achievement",
+            "pronunciations": [
+                {
+                    "transcriptions": [
+                        {
+                            "transcription": "/əˈtʃiːvmənt/",
+                            "notation": "IPA"
+                        }
+                    ],
+                    "audio": {
+                        "url": "assets/audio/dictionary/achievement.mp3",
+                        "license": {
+                            "name": "BY-SA 3.0",
+                            "url": "https://creativecommons.org/licenses/by-sa/3.0"
+                        },
+                        "sourceUrl": "https://commons.wikimedia.org/w/index.php?curid=1755102"
+                    },
+                    "context": {
+                        "regions": [
+                            "United States"
+                        ]
+                    }
+                }
+            ],
+            "interpretations": [
+                {
+                    "lemma": "achievement",
+                    "normalizedLemmas": [
+                        {
+                            "lemma": "achievement"
+                        }
+                    ],
+                    "partOfSpeech": "noun",
+                    "grammar": [
+                        {
+                            "number": [
+                                "singular"
+                            ],
+                            "case": [
+                                "nominative"
+                            ]
+                        }
+                    ],
+                    "morphemes": [
+                        {
+                            "entry": "achieve",
+                            "type": "root"
+                        },
+                        {
+                            "entry": "-ment",
+                            "type": "suffix"
+                        }
+                    ]
+                }
+            ],
+            "lexemes": [
+                {
+                    "lemma": "achievement",
+                    "partOfSpeech": "noun",
+                    "senses": [
+                        {
+                            "definition": "The act of achieving or performing; a successful performance; accomplishment",
+                            "labels": [
+                                "countable",
+                                "uncountable"
+                            ]
+                        },
+                        {
+                            "definition": "A great or heroic deed or feat; something accomplished by valor or boldness",
+                            "labels": [
+                                "countable",
+                                "uncountable"
+                            ]
+                        },
+                        {
+                            "definition": "An escutcheon or ensign armorial; now generally applied to the funeral shield commonly called hatchment.",
+                            "labels": [
+                                "countable",
+                                "uncountable"
+                            ],
+                            "context": {
+                                "domains": [
+                                    "heraldry"
+                                ]
+                            }
+                        },
+                        {
+                            "definition": "An award for completing a particular task or meeting an objective in a video game.",
+                            "labels": [
+                                "countable",
+                                "uncountable"
+                            ],
+                            "context": {
+                                "domains": [
+                                    "video games"
+                                ]
+                            },
+                            "usageExamples": [
+                                "Finishing the game does not give you a 100% score until you have unlocked all of the achievements."
+                            ],
+                            "synonyms": [
+                                "trophy"
+                            ]
+                        },
+                        {
+                            "definition": "(grammar) The lexical aspect (aktionsart) of verbs or predicates that change in an instant.",
+                            "labels": [
+                                "countable",
+                                "uncountable"
+                            ],
+                            "context": {
+                                "domains": [
+                                    "linguistics"
+                                ]
+                            }
+                        }
+                    ],
+                    "forms": [
+                        {
+                            "form": "achievements",
+                            "grammar": [
+                                {
+                                    "number": [
+                                        "plural"
+                                    ],
+                                    "case": [
+                                        "nominative"
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "synonymSets": [
+                        {
+                            "synonyms": [
+                                "accomplishment"
+                            ]
+                        },
+                        {
+                            "synonyms": [
+                                "trophy"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "license": {
+                "name": "CC BY-SA 3.0",
+                "url": "https://creativecommons.org/licenses/by-sa/3.0"
+            },
+            "sourceUrls": [
+                "https://en.wiktionary.org/wiki/achievement"
+            ]
+        }
+    ]
+}
+}

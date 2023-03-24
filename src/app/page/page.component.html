@@ -1,0 +1,26 @@
+<div class="grid h-full overflow-y-auto" [ngSwitch]="loadState">
+  <mat-spinner diameter="80" *ngSwitchCase="'loading'" class="m-auto">
+  </mat-spinner>
+
+  <div *ngSwitchCase="'error'" class="m-auto flex flex-col items-center">
+    <h1 class="font-lg">An error occurred.</h1>
+    <button mat-raised-button color="primary" (click)="loadContent()">
+      Retry
+    </button>
+  </div>
+
+  <div
+    id="page"
+    #container
+    class="m-auto md:my-0 lg:p-5 relative w-full h-full"
+    [hidden]="loadState != 'success'"
+    style="transform-origin: left top"
+    (dblclick)="handleDoubleClick()"
+    [style.scale]="zoom"
+  >
+    <div
+      class="grid absolute mx-auto xl:w-[955.91px]"
+      style="left: 0; right: 0"
+    ></div>
+  </div>
+</div>

@@ -1,0 +1,5 @@
+<cdk-virtual-scroll-viewport #viewport orientation="horizontal" [itemSize]="pageWidth" class="h-full"
+    style="overflow: hidden;">
+    <app-page *cdkVirtualFor="let page of  pages; let index=index" [pageId]="index+1" [style.width.px]="pageWidth">
+    </app-page>
+</cdk-virtual-scroll-viewport>

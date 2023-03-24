@@ -1,0 +1,10 @@
+<div class="flex flex-col items-start gap-5 p-3">
+  <span *ngIf="title" class="text-xl" style="white-space: normal" [innerHTML]="title"></span>
+  <audio id="audio" controls [src]="src" style="left: 0; margin: auto"></audio>
+  <button color="primary" mat-raised-button (click)="isShowingText = !isShowingText">
+      {{isShowingText ? 'Hide Text':'Show Text'}}
+  </button>
+  <p class="text-lg" *ngIf="isShowingText" style="white-space: normal;">
+      {{text}}
+  </p>
+</div>
