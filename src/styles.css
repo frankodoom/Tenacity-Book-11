@@ -1,3 +1,6 @@
+@import url("./styles/roboto.css");
+@import url("./styles/material-icons.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
