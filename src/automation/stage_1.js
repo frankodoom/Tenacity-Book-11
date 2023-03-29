@@ -18,7 +18,7 @@ function getData(startIndex, startPageNumber) {
     pageNumber++;
 
     // IF CAPTURING ONE PAGE UNCOMMENT THE BREAK
-    break;
+    //break;
   }
 
   // Save results as json
