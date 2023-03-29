@@ -16,6 +16,9 @@ function getData(startIndex, startPageNumber) {
     });
     img.src = imgData;
     pageNumber++;
+
+    // IF CAPTURING ONE PAGE UNCOMMENT THE BREAK
+    break;
   }
 
   // Save results as json
