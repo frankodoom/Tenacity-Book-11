@@ -3,10 +3,11 @@
 /src/assets/h5p
 /src/assets/pvideos
 /src/assets/videos
-/src/assets/h5p/pagesBeforeAudioAndVideo
+/src/assets/pagesBeforeAudioAndVideo/*
 /src/assets/gpages
 /src/assets/videos/
 *.wmv
+*.pyc
 
 # Compiled output
 /dist
