@@ -1,4 +1,13 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
+#Custom
+/src/assets/h5p
+/src/assets/pvideos
+/src/assets/videos
+/src/assets/pagesBeforeAudioAndVideo/*
+/src/assets/gpages
+/src/assets/videos/
+*.wmv
+*.pyc
 
 # Compiled output
 /dist

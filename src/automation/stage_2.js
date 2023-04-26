@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const results = require(path.resolve(__dirname, "pages.json"));
+const results = require(String.raw`C:\Users\Mubarak Salley\Downloads\pages (4).json`);
 const assetsDir = path.resolve(__dirname, "../assets");
 const imagesDir = path.resolve(assetsDir, "images");
 const pagesDir = path.resolve(assetsDir, "pages");

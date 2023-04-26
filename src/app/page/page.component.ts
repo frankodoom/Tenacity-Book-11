@@ -39,6 +39,16 @@ export class PageComponent implements AfterViewInit {
     setTimeout(() => {
       this.updateZoom();
     });
+
+    setTimeout(()=>{
+      //let output:any = document.getElementsByTagName("iframe");
+      //console.log("iframe Html 5")
+      // This removes scroll from iframes
+      let output:any = $("iframe").contents().find('html.h5p-iframe').each(function(){
+        this.scrollTo( 0, this.scrollHeight);
+      }).css("overflow","hidden");
+
+    } , 3000)
   }
 
   loadContent() {
