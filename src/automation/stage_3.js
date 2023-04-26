@@ -15,7 +15,69 @@
 //     position: 1300,
 //     height: 500,
 //   },
+    //  {
+    //     type:"divider",
+    //     position:500,
+    //     height:1
+    //  }
 // ];
+
+var cumulativeOffset = function(element , tillparent = undefined) {
+  var top = 0, left = 0;
+  do {
+      top += element.offsetTop  || 0;
+      left += element.offsetLeft || 0;
+      if (element == tillparent){
+          break;
+      }
+
+      element = element.offsetParent;
+  } while(element);
+
+  return {
+      top: top,
+      left: left
+  };
+};
+
+function removeElementsBetweenDividers(page_id){
+  dividers = $("div.divider")
+  startpos = -1
+  stoppos = -1
+  if( dividers.length == 1){
+    stoppos = 99999999;
+    startpox = cumulativeOffset(dividers[0]).top;
+  }
+  if(dividers.length == 2){
+    topArray = new Array();
+    dividers.each(function(index){
+      topArray.push(cumulativeOffset(this).top)
+    })
+    topArray.sort(function(a,b){ if(a>b){return 1;}else{return -1} });
+    startpos = topArray[0];
+    stoppos = topArray[1];
+  }
+
+  toremove = new Array();
+  $(page_id).find("div.t").each(
+    function (index){
+      pos = cumulativeOffset(this).top;
+      console.log(pos);
+      if( startpos <pos && pos < stoppos){
+          toremove.push(this);
+      }
+    }
+  )
+
+  toremove.foreach( function(i){
+    i.remove();
+  })
+
+  image_holders = $("div.imageholder")
+  if (image_holders.length >= 2){
+    image_holders[1].remove()
+  }
+}
 
 function insertContent(rootElement, items) {
   rootElement = $(rootElement);
@@ -41,6 +103,7 @@ function insertContent(rootElement, items) {
   function addImage(section, shiftAmount) {
     shiftAmount = shiftAmount || 0;
     const image = $(document.createElement("div"));
+    image.addClass("imageholder");
     const top = section.start + shiftAmount;
     const height = (section.end || imageHeight) - section.start;
     image.css({
@@ -74,6 +137,7 @@ function insertContent(rootElement, items) {
 
   rootElement.height(rootElement.height() + totalContentHeight);
   removeGuide(rootElement);
+  return rootElement;
 }
 
 function setItemHeight(item) {
@@ -85,6 +149,17 @@ function setItemHeight(item) {
 
       case "video":
         item.height = 491;
+        break;
+
+      case "divider":
+        item.height = 1;
+        break;
+
+      case "inh":
+        item.height =60;
+        break;
+
+      case "dict":
         break;
 
       default:
@@ -104,6 +179,25 @@ function createItemElement(item) {
     case "audio":
     case "video":
       element = $(document.createElement(item.type)).prop("controls", true);
+      break;
+    case "divider":
+      element=$(document.createElement("div"));
+      element.addClass("divider");
+      break;
+    case "dict":
+      elementdd = document.createElement("app-dictation");
+      elementdd.setAttribute("title", item.title);
+      elementdd.setAttribute("text", item.text);
+      //elementdd.setAttribute("src", item);
+      item.type = "audio"
+      element = $(elementdd)
+      break
+
+    case "inh":
+      elementdd = document.createElement("div")
+      elementdd.setAttribute("style","width:100%;")
+      elementdd.innerHTML = item.text
+      element = $(elementdd)
       break;
 
     default:
@@ -184,3 +278,6 @@ function setPage(id) {
 function removeGuide(rootElement) {
   $(rootElement).children("div#guide").remove();
 }
+
+
+console.log("HI")

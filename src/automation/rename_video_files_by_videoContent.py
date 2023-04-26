@@ -532,6 +532,31 @@ def find_image_in_video_V3(video_filename, template_image):
         print(p1.stdout)
     return list_outs
 
+def convert_all_videos ( from_ext , to_ext, absolute_dir ):
+    list_res = glob.glob(absolute_dir + "\\*." + from_ext)
+
+    for vid in list_res:
+        command = [
+            "ffmpeg",
+            "-y",
+             "-i",
+             vid,
+             "-c:v",
+             "libx264",
+             "-crf"
+             , "23"
+             , "-c:a"
+             , "aac"
+             , "-q:a"
+             , "100"
+             ,
+             vid[0:-3] + to_ext,
+        ]
+        print(*command)
+        output = subprocess.run(command, check=True, stdout=subprocess.PIPE)
+
+        print("Conver Video Output : ", output)
+        #break
 
 # %%
 w, h , img = get_template_image(UNIT_IMAGE_PATH)

@@ -9,6 +9,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -24,24 +25,63 @@ import time
 print(os.path.abspath("."))
 
 STAGE3_JS_SCRIPT_1 = """
-let items = [
-//   {
-//     type: "video",
-//     name: "ENG.10.02.18A.mp4",
-//     position: 710,
-//   },
-//   {
-//     type: "audio",
-//     name: "59 SB10 U1 B1.4 P11.mp3",
-//     position: 1200,
-//   },
-//   {
-//     type: "h5p",
-//     name: "157 SB10 U1 AE1-3.html",
-//     position: 1300,
-//     height: 500,
-//   },
-// ];
+
+var cumulativeOffset = function(element , tillparent = undefined) {
+  var top = 0, left = 0;
+  do {
+      top += element.offsetTop  || 0;
+      left += element.offsetLeft || 0;
+      if (element == tillparent){
+          break;
+      }
+
+      element = element.offsetParent;
+  } while(element);
+
+  return {
+      top: top,
+      left: left
+  };
+};
+
+function removeElementsBetweenDividers(page_id){
+  dividers = $("div.divider")
+  startpos = -1
+  stoppos = -1
+  if( dividers.length == 1){
+    stoppos = 99999999;
+    startpox = cumulativeOffset(dividers[0]).top;
+  }
+  if(dividers.length == 2){
+    topArray = new Array();
+    dividers.each(function(index){
+      topArray.push(cumulativeOffset(this).top)
+    })
+    topArray.sort(function(a,b){ if(a>b){return 1;}else{return -1} });
+    startpos = topArray[0];
+    stoppos = topArray[1];
+  }
+
+  toremove = new Array();
+  $(page_id).find("div.t").each(
+    function (index){
+      pos = cumulativeOffset(this).top;
+      console.log(pos);
+      if( startpos <pos && pos < stoppos){
+          toremove.push(this);
+      }
+    }
+  )
+
+  toremove.foreach( function(i){
+    i.remove();
+  })
+
+  image_holders = $("div.imageholder")
+  if (image_holders.length >= 2){
+    image_holders[1].remove()
+  }
+}
 
 function insertContent(rootElement, items) {
   rootElement = $(rootElement);
@@ -67,6 +107,7 @@ function insertContent(rootElement, items) {
   function addImage(section, shiftAmount) {
     shiftAmount = shiftAmount || 0;
     const image = $(document.createElement("div"));
+    image.addClass("imageholder");
     const top = section.start + shiftAmount;
     const height = (section.end || imageHeight) - section.start;
     image.css({
@@ -74,7 +115,7 @@ function insertContent(rootElement, items) {
       top: top,
       width: imageWidth,
       height: height,
-      background: `url('$\{imageSource\}')`,
+      background: `url('${imageSource}')`,
       "background-size": "cover",
       "background-position-x": 0,
       "background-position-y": -section.start,
@@ -100,6 +141,7 @@ function insertContent(rootElement, items) {
 
   rootElement.height(rootElement.height() + totalContentHeight);
   removeGuide(rootElement);
+  return rootElement;
 }
 
 function setItemHeight(item) {
@@ -111,6 +153,17 @@ function setItemHeight(item) {
 
       case "video":
         item.height = 491;
+        break;
+
+      case "divider":
+        item.height = 1;
+        break;
+
+      case "inh":
+        item.height =60;
+        break;
+
+      case "dict":
         break;
 
       default:
@@ -130,6 +183,25 @@ function createItemElement(item) {
     case "audio":
     case "video":
       element = $(document.createElement(item.type)).prop("controls", true);
+      break;
+    case "divider":
+      element=$(document.createElement("div"));
+      element.addClass("divider");
+      break;
+    case "dict":
+      elementdd = document.createElement("app-dictation");
+      elementdd.setAttribute("title", item.title);
+      elementdd.setAttribute("text", item.text);
+      //elementdd.setAttribute("src", item);
+      item.type = "audio"
+      element = $(elementdd)
+      break
+
+    case "inh":
+      elementdd = document.createElement("div")
+      elementdd.setAttribute("style","width:100%;")
+      elementdd.innerHTML = item.text
+      element = $(elementdd)
       break;
 
     default:
@@ -210,6 +282,7 @@ function setPage(id) {
 function removeGuide(rootElement) {
   $(rootElement).children("div#guide").remove();
 }
+
 """
 
 STAGE3_JS_SCRIPT_2 = """
@@ -221,6 +294,7 @@ insertContent(rootElement, items);
 options = Options()
 options.binary_location = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
 driver = webdriver.Chrome(executable_path=r'.\chromedriver.exe', options=options,desired_capabilities=d)
+
 
 
 # %%
@@ -397,8 +471,9 @@ print(element)
 element.screenshot("pageimage.png")
 # %%
 import tkinter as tk
-import threading, generate_mediaToPage_data, test_vosk, re
-from tkinter import messagebox
+import threading, generate_mediaToPage_data, test_vosk, re, audio_to_text
+from tkinter import messagebox, filedialog, simpledialog
+import json
 
 #root = tk.Tk() # create root window
 
@@ -484,7 +559,7 @@ class PageOne(tk.Frame):
         self._selectedItem = None
         self._pagenum = 1
         self.result_data, self.u_videos, self.u_audio, self.ids_list = generate_mediaToPage_data.get_data()
-        self.positioned_medias = set()
+        self.positioned_medias = dict()
 
 
         #List ITEM
@@ -550,13 +625,72 @@ class PageOne(tk.Frame):
         nextpagebtn.grid(column=4 , row=4)
 
         #Generate Page Button
-        nextpagebtn = tk.Button(self, text="Generate New Page", command= lambda : print("t"))
+        nextpagebtn = tk.Button(self, text="Generate New Page", command= lambda : self.onGeneratePageButton() )
         nextpagebtn.grid(column=1 , row=5)
 
         #Save On Next Page ?
         self.onSavePageCheckbuttonVaraibe = tk.IntVar(value=0)
         self.saveOnNextPage = tk.Checkbutton(self, text="Save on Change Page", command=lambda : self.on_pagechage_checkbox(), variable=self.onSavePageCheckbuttonVaraibe )
         self.saveOnNextPage.grid(column=2, row=5)
+
+        #Add Divider Button
+        prevPagebtn = tk.Button(self, text="Add Divider", command= lambda : self.add_dividers())
+        prevPagebtn.grid(column=1, row=6)
+
+        #Done Divider Button
+        prevMediaPagebtn = tk.Button(self, text="Done Divider",command= lambda : self.done_divider())
+        prevMediaPagebtn.grid(column=2, row=6)
+
+        #Clear Divider Button
+        nextMediaPagebtn = tk.Button(self, text="Clear Dividers" , command= lambda : self.clear_dividers() )
+        nextMediaPagebtn.grid(column=3, row=6)
+
+
+        #Add Divider Button
+        prevPagebtn = tk.Button(self, text="Split Selected Media", command= lambda : self.onSplitSelectedMedia() )
+        prevPagebtn.grid(column=1, row=7)
+
+        self.fromMinVar = tk.IntVar()
+        self.fromSecVar = tk.IntVar()
+
+        #From Min Spin
+        self.from_minspin = tk.Spinbox(self, from_=0, to=59, wrap=True, textvariable=self.fromMinVar, width=2,command=lambda : self.time_duration_update())
+        self.from_minspin.grid(column=2, row=7)
+
+        #From Sec Spin
+        self.from_secspin = tk.Spinbox(self, from_=0, to=59, wrap=True, textvariable=self.fromSecVar, width=2,command=lambda : self.time_duration_update())
+        self.from_secspin.grid(column=3, row=7)
+
+        self.toMinVar = tk.IntVar()
+        self.toSecVar = tk.IntVar()
+
+        #to Min Spin
+        self.to_minspin = tk.Spinbox(self, from_=0, to=59, wrap=True, textvariable=self.toMinVar, width=2,command=lambda : self.time_duration_update())
+        self.to_minspin.grid(column=4, row=7)
+
+        #From Sec Spin
+        self.to_secspin = tk.Spinbox(self, from_=0, to=59, wrap=True, textvariable=self.toSecVar, width=2,command=lambda : self.time_duration_update())
+        self.to_secspin.grid(column=5, row=7)
+
+        #Add Dictation Button
+        self.add_dictation_button = tk.Button(self, text="Add Dictation", command= lambda : self.insert_dictation())
+        self.add_dictation_button.grid(column=1, row=9)
+
+        #Add Quizz header
+        self.add_dictation_button = tk.Button(self, text="Add Quizz Header",command= lambda : self.insert_interactionquizz_header())
+        self.add_dictation_button.grid(column=2, row=9)
+
+        #Add H5pHtml
+        self.add_h5pframe_button = tk.Button(self, text="Add H5p Html",command= lambda : self.insert_h5p())
+        self.add_h5pframe_button.grid(column=3, row=10)
+
+        #Clear Stage 3 Json
+        self.add_h5pframe_button = tk.Button(self, text="Clear Stage 3 Json",command= lambda : self.clear_stage3json())
+        self.add_h5pframe_button.grid(column=3, row=9)
+
+        #Clear Divider Button
+        # nextMediaPagebtn = tk.Button(self, text="Clear Dividers" , command= lambda : self.clear_dividers() )
+        # nextMediaPagebtn.grid(column=3, row=6)
 
 
         # label = tk.Label(self, text="This is page 1")
@@ -574,7 +708,10 @@ class PageOne(tk.Frame):
         # self.
 
     def on_closing(self):
-      self.driver.close()
+      try:
+          self.driver.close()
+      except:
+         pass
       print("DONE WITH ")
 
 
@@ -640,7 +777,230 @@ class PageOne(tk.Frame):
       // Dispatch the event to the target element
       targetElement.dispatchEvent(event);
       """)
-      ActionChains(driver=self.driver).context_click(element)
+      #ActionChains(driver=self.driver).context_click(element)
+
+    def add_dividers(self):
+      """A divider is a element used to help determine which elements to delete from a page"""
+      self.initiate_position_code()
+
+    def done_divider(self):
+       list_positions = []
+       px = -1
+       for entry in self.driver.get_log('browser'):
+        print("console: ",entry)
+        search_ress = re.search( r"\"Position:\"\s*\"(\d*)px",entry["message"] )
+        if search_ress != None:
+           px = search_ress.group(1)
+           print("px ",px)
+           list_positions.append(px)
+
+       if list_positions != []:
+          for divider in list_positions:
+             gened_json = test_vosk.generate_main_mediafilejson("", "", "div", 0, position=[self._pagenum, divider])
+             if self._pagenum in self.generated_stage3json.keys():
+                self.generated_stage3json[self._pagenum].append(gened_json)
+             else:
+                self.generated_stage3json.update({self._pagenum:[]})
+                self.generated_stage3json[self._pagenum].append(gened_json)
+
+
+       print(list_positions)
+
+    def clear_dividers(self):
+       if self._pagenum in self.generated_stage3json.keys():
+          temp = self.generated_stage3json[self._pagenum]
+          self.generated_stage3json[self._pagenum] = [i for i in temp if i["mediaType"] != "div"]
+
+    def time_duration_update(self):
+       print("from : ", f"{self.fromMinVar.get():02}", f"{self.fromSecVar.get():02}")
+       print("to : ", f"{self.toMinVar.get():02}" , f"{self.toSecVar.get():02}")
+
+    def onSplitSelectedMedia(self):
+       from_sec = (self.fromMinVar.get() * 60 ) + self.fromSecVar.get()
+       to_sec = (self.toMinVar.get() * 60 ) + self.toSecVar.get()
+
+       if to_sec > from_sec and self.selectedItem != None :
+          #Proceed
+          if self.selectedItem[-3:] == "wmv":
+              filename = generate_mediaToPage_data.PVIDEO_FOLDER_PATH +"\\"+ self.selectedItem
+          elif self.selectedItem[-3:] == "mp3":
+              filename = generate_mediaToPage_data.AUDIO_FOLDER_PATH + "\\"+ self.selectedItem
+          else:
+              messagebox.showwarning("Split Media", "SELECTED IT IS NOT AUDIO OR VIDEO FILE ? Click Done Again After selecting an item." )
+              return
+          ftstartTime = time.strftime("%M_%S", time.gmtime(from_sec))
+          ftstopTime = time.strftime("%M_%S", time.gmtime(to_sec))
+          appendication = f"{ftstartTime}__{ftstopTime}"
+          #test_vosk.generate_splited_medifilejson()
+          new_filename= filename[::-1].replace(".", f"{appendication}."[::-1],1)[::-1]
+
+          if not messagebox.askokcancel("Proceed ? ", f"Are you sure you want to create : {new_filename}"):
+            return
+
+          int_res = test_vosk.split_media(filename , from_sec, to_sec, new_filename)
+
+          if int_res == 0:
+             listss = self.list_items_var.get()
+             listss = list(listss)
+             indx = listss.index(self.selectedItem)
+             listss.insert(indx + 1, new_filename.split("\\")[-1])
+             self.list_items_var.set(listss)
+
+             indx = 0 if self.selectedItem[-3:] == "mp3" else 1
+             self.result_data[self._pagenum][indx].append(new_filename.split("\\")[-1])
+             self.result_data[self._pagenum +1][indx].append(new_filename.split("\\")[-1])
+             self.result_data[self._pagenum -1][indx].append(new_filename.split("\\")[-1])
+
+
+    def save_page_data (self):
+       data = json.dumps(self.result_data[self._pagenum], indent=4)
+       stage_3json = json.dumps(self.generated_stage3json[self._pagenum])
+
+       with open(f"./saved_data/page{self._pagenum}.json", "w") as opejsn:
+          opejsn.write(data)
+       with open(f"./saved_data/page{self._pagenum}s3.json", "w") as opejsn:
+          opejsn.write(data)
+
+       messagebox.showinfo("Save","Save Successfull")
+
+    def load_page_data (self):
+       if os.path.exists(f"./saved_data/page{self._pagenum}.json"):
+          self.result_data[self._pagenum]= json.load(f"./saved_data/page{self._pagenum}.json")
+          self.generated_stage3json[self._pagenum] = json.load(f"./saved_data/page{self._pagenum}s3.json")
+          self.set_page(self._pagenum,False)
+
+
+    def load_h5p (self):
+       pass
+
+    def insert_dictation(self):
+       audio_file_path = filedialog.askopenfilename(initialdir="./", title="Select Dictation Audio File", filetypes=[("audio", "*.mp3")])
+       audio_filename = audio_file_path.split("/")[-1]
+       resultt = audio_to_text.convert_audio_to_text(audio_file_path)
+       if not isinstance(resultt,str):
+          messagebox.showerror("AudioToText", "Audio to text transformation failed")
+          return
+       title_str = simpledialog.askstring("Dictation Title", "What is the title of the dictation ?",initialvalue="")
+
+
+       self.initiate_position_code()
+       messagebox.showinfo("Select Position", "Select the position of the dictation then close the dialog")
+
+       px = None
+       for entry in self.driver.get_log('browser'):
+        print("console: ",entry)
+        search_ress = re.search( r"\"Position:\"\s*\"(\d*)px",entry["message"] )
+        if search_ress != None:
+           px = search_ress.group(1)
+           print("px ",px)
+
+       if px != None:
+          #prefered_height = simpledialog.askstring("Dictation Title", "What is the title of the dictation ?",initialvalue="")
+          height = 4 * 54 + (len(resultt)/92) * 29
+
+          dict_obj = test_vosk.generate_main_mediafilejson(audio_filename,audio_file_path,"dict",height=height,title=title_str, text=resultt,position=[self._pagenum, px])
+          print("Dict obj", dict_obj)
+
+          if self._pagenum in self.generated_stage3json.keys():
+              self.generated_stage3json[self._pagenum].append(dict_obj)
+          else:
+              self.generated_stage3json.update({self._pagenum : []})
+              self.generated_stage3json[self._pagenum].append(dict_obj)
+
+    def insert_interactionquizz_header(self):
+       htmlstring = """<h1 class="exercise">INTERACTIVE EXERCISES</h1>"""
+       typeee = "inh" #innerhtml element
+       posi = None
+
+       self.initiate_position_code()
+       messagebox.showinfo("Select Position", "Select the position of the dictation then close the dialog")
+
+       px = None
+       for entry in self.driver.get_log('browser'):
+        print("console: ",entry)
+        search_ress = re.search( r"\"Position:\"\s*\"(\d*)px",entry["message"] )
+        if search_ress != None:
+           px = search_ress.group(1)
+           print("px ",px)
+
+       if px!=None:
+         generated_json = test_vosk.generate_main_mediafilejson("", "", typeee, text=htmlstring, position=[ self._pagenum, px])
+
+         print("Header obj", generated_json)
+
+         if self._pagenum in self.generated_stage3json.keys():
+              self.generated_stage3json[self._pagenum].append(generated_json)
+         else:
+            self.generated_stage3json.update({self._pagenum : []})
+            self.generated_stage3json[self._pagenum].append(generated_json)
+
+    def insert_h5p(self):
+       h5p_file_path = filedialog.askopenfilename(initialdir="./", title="Select H5p File", filetypes=[("html", "*.html")])
+       h5p_filename = h5p_file_path.split("/")[-1]
+
+      #  if not isinstance(resultt,str):
+      #     messagebox.showerror("AudioToText", "Audio to text transformation failed")
+      #     return
+       #title_str = simpledialog.askstring("Dictation Title", "What is the title of the dictation ?",initialvalue="")
+
+
+       self.initiate_position_code()
+       messagebox.showinfo("Select Position", "Select the position of the dictation then close the dialog")
+
+       px = None
+       for entry in self.driver.get_log('browser'):
+        print("console: ",entry)
+        search_ress = re.search( r"\"Position:\"\s*\"(\d*)px",entry["message"] )
+        if search_ress != None:
+           px = search_ress.group(1)
+           print("px ",px)
+
+       selectLinkOpeninNewTab = Keys.COMMAND + "t"
+       #self.driver.find_element(By.TAG_NAME, "body").send_keys(selectLinkOpeninNewTab)
+
+
+       #self.driver.execute_script("window.open()")
+       self.driver.switch_to.new_window(type_hint="tab")
+       #WebDriverWait(self.driver)
+       self.driver.get(h5p_file_path)
+
+       height = simpledialog.askinteger("H5p Html", "What is the height of the h5p html in px ?",initialvalue="")
+       #self.driver.switch_to.window( self.driver.window_handles[0])
+       self.driver.close()
+       self.driver.switch_to.window(self.driver.window_handles[0])
+       #self.driver_get_page(self._pagenum)
+       if px != None:
+          #prefered_height = simpledialog.askstring("Dictation Title", "What is the title of the dictation ?",initialvalue="")
+          #height = 4 * 54 + (len(resultt)/92) * 29
+
+          dict_obj = test_vosk.generate_main_mediafilejson(h5p_filename,h5p_file_path,"h5p",height=height,title=None, text=None, position=[self._pagenum, px])
+          print("Dict obj", dict_obj)
+
+          if self._pagenum in self.generated_stage3json.keys():
+              self.generated_stage3json[self._pagenum].append(dict_obj)
+          else:
+              self.generated_stage3json.update({self._pagenum : []})
+              self.generated_stage3json[self._pagenum].append(dict_obj)
+
+    def clear_stage3json(self):
+       self.generated_stage3json.update({self._pagenum : []})
+       self.positioned_medias.update({self._pagenum: set()})
+       self.format_list()
+      #  if self._pagenum in self.generated_stage3json.keys():
+      #         self.generated_stage3json[self._pagenum].append(dict_obj)
+      #     else:
+      #         self.generated_stage3json.update({self._pagenum : []})
+      #         self.generated_stage3json[self._pagenum].append(dict_obj)
+
+
+
+
+
+
+
+
+
+
 
     def done(self):
       generated_json = None
@@ -671,7 +1031,15 @@ class PageOne(tk.Frame):
 
       if test_vosk.file_exists(filename):
           dur = test_vosk.get_file_duration_ffmpeg(filename)
-          generated_json = test_vosk.generate_main_mediafilejson(filename, duration=dur, position=[ self._pagenum, px ])
+          if self.selectedItem not in self.positioned_medias.get(self._pagenum):
+              generated_json = test_vosk.generate_main_mediafilejson(filename.split("\\")[-1],filename,filename[-3:],duration=dur, position=[ self._pagenum, px ])
+          else:
+             for i in range(len(self.generated_stage3json[self._pagenum])):
+                if self.generated_stage3json[self._pagenum][i][test_vosk.mfjf.MEDIAFILENAME.value] == self.selectedItem:
+                   print("Updating Existing Value")
+                   self.generated_stage3json[self._pagenum][i][test_vosk.mfjf.POSITION.value] = [self._pagenum, int(px)]
+                   break
+
       else:
          messagebox.showwarning("Selected Item", f"Test_vosk says the file does not exist, are your paths correct ? {filename}" )
          return
@@ -682,15 +1050,82 @@ class PageOne(tk.Frame):
           if self._pagenum not in self.generated_stage3json.keys():
             self.generated_stage3json.update({ self._pagenum : []} )
           self.generated_stage3json[self._pagenum].append(generated_json)
-          self.positioned_medias.add(self.selectedItem)
+          self.positioned_medias.get(self._pagenum).add(self.selectedItem)
 
       self.selectedItem = "None Selected"
       print(self.generated_stage3json)
       print(self.positioned_medias)
-      self.format_list()
+      self.format_list() # Formats the list with coloring
 
     def onGeneratePageButton(self):
+
        page_id = self.ids_list[self._pagenum][1]
+       page_number = self._pagenum
+       page_data = self.generated_stage3json[page_number]
+
+       self.driver.refresh()
+       WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, page_id)))
+
+       item_list = []
+       if page_data != []:
+          for data in page_data:
+            print("Data" , data)
+            item = test_vosk.convert_mfj_to_stage3item(data)
+            if item != None:
+               item_list.append(item)
+
+
+       items_json_string = json.dumps(item_list)
+       print("ITEMS JSON STRING\n", items_json_string)
+
+       #TIME TO RUN SCRIPTS
+       # SCRIPT STAGE 2 is modifiable
+      #  STAGE3_JS_SCRIPT_2 = """
+      #   rootElement = undefined;
+      #   items = undefined;
+      #   insertContent(rootElement, items);
+      #   """
+
+       paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ f"output_element = insertContent(rootElement, items);"
+
+       print(paddd_script)
+       self.driver.execute_script(
+          paddd_script
+       )
+
+       #GET POSITION DATA
+      #  for entry in self.driver.get_log('browser'):
+      #     print("clearing console: ",entry)
+          # search_ress = re.search( r"\"Position:\"\s*\"(\d*)px",entry["message"] )
+          # if search_ress != None:
+          #   px = search_ress.group(1)
+          #   print("px ",px)
+          #   break
+       #self.driver.execute_script(f"console.log('{paddd_script}')")
+
+       #self.driver.execute_script(f"output_element = $('#{page_id}');output_element.prop(\"outerHTML\");")\
+       element_obj = self.driver.find_element(By.ID, page_id)
+       strring = element_obj.get_property("outerHTML")
+      #  for entry in self.driver.get_log('browser'):
+      #     print("html output console: ",entry)
+
+       print(strring)
+       with open( generate_mediaToPage_data.GENERATED_PAGES_OUTPUT + f"\\{page_number}.html", "w", encoding="utf-8") as store_generated:
+          store_generated.write(strring)
+
+
+       self.clear_listbox_selection()
+
+
+    def clear_listbox_selection(self):
+       self.listbox.selection_clear(0, "end")
+
+    def clear_all_assigned_positions (self):
+       removed_set = set()
+      #  for i in self.generated_stage3json[self._pagenum]:
+      #     if i["mediaFileName"] in self.positioned_medias and i["mediaFileName"] not in removed_set:
+      #        i["position"] = None
+      #  self.positioned_medias = self.positioned_medias.difference(removed_set)
 
 
 
@@ -718,8 +1153,10 @@ class PageOne(tk.Frame):
 
     def format_list(self):
         listss = self.list_items_var.get()
+        if self._pagenum not in self.positioned_medias.keys():
+             self.positioned_medias.update({self._pagenum: set() })
         for i in range(len(listss)):
-          self.listbox.itemconfig( i , { "bg":"green" if listss[i] in self.positioned_medias else "white"}  )
+          self.listbox.itemconfig( i , { "bg":"green" if listss[i] in self.positioned_medias.get(self._pagenum) else "white"}  )
 
     def get_unassigned_list(self):
        return [ "", "UNASSIGNED ITEMS" , "" ] + list(self.u_audio) + list(self.u_videos)
@@ -735,6 +1172,8 @@ class PageOne(tk.Frame):
           self.driver_get_page(self._pagenum)
 
           self.pageNumberVariabe.set(value=f"Page - {self._pagenum} ( {self._pagenum - generate_mediaToPage_data.pages_offset } )")
+          if self._pagenum not in self.positioned_medias.keys():
+             self.positioned_medias.update({self._pagenum: set() })
           if self._pagenum in self.result_data.keys():
              outpp = self.result_data[self._pagenum][0] + self.result_data[self._pagenum][1]
              self.set_listitem( outpp)

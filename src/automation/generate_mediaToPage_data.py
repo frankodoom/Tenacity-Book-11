@@ -80,6 +80,9 @@ AUDIO_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\
 PVIDEO_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\pvideos"
 PAGE_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\pages"
 
+# This Variable will be used By another python file wich imports this out
+GENERATED_PAGES_OUTPUT = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\gpages"
+
 #WORDS that dont help with fuzzy text matching
 WORDS_TO_REMOVE_FROM_VIDEO_NAME = ["Increaseyourwordpower","LearningStrategies","Vocabulary", "StudySkills", "LanguageFocus", "Listening", "Reading", "Speaking" , "Writing", "_"]
 MATCHING_THRESHOLD = 0.70 # a value from 0 - 1
@@ -177,7 +180,7 @@ def get_list_for_page( page_number ):
 
         #filter Audio file names by pages
         # if an audio file is assigned to page 10, that means that it could also be pressent on the next page
-        qs = f"P0*({page_number+pages_offset}|{page_number+pages_offset+1})(\D|$)"
+        qs = f"P0*({page_number+0}|{page_number+0-1})(\D|$)"
         filtered_audio_files = [fn+".mp3" for fn in list(filter(lambda x: re.search(qs,x) != None, list_of_audio_files ))]
         filtered_video_files = []
         temp = ids_list[ page_number + pages_offset]
@@ -258,7 +261,7 @@ def get_data () :
     matched_medias = set()
     res_dict = dict()
     for i in range(1,301):
-      results = get_list_for_page(i)
+      results = get_list_for_page(i+0)
       res_dict.update({i+pages_offset:results})
       print(i+pages_offset,results )
       if results != None:
