@@ -188,8 +188,9 @@ function createItemElement(item) {
       elementdd = document.createElement("app-dictation");
       elementdd.setAttribute("title", item.title);
       elementdd.setAttribute("text", item.text);
+      elementdd.setAttribute("src", item.src)
       //elementdd.setAttribute("src", item);
-      item.type = "audio"
+      //item.type = "audio"
       element = $(elementdd)
       break
 
