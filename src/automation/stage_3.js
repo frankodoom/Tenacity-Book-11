@@ -22,6 +22,10 @@
     //  }
 // ];
 
+//const { HighlightSpanKind } = require("typescript");
+
+// const { root } = require("postcss");
+
 var cumulativeOffset = function(element , tillparent = undefined) {
   var top = 0, left = 0;
   do {
@@ -40,18 +44,27 @@ var cumulativeOffset = function(element , tillparent = undefined) {
   };
 };
 
-function removeElementsBetweenDividers(page_id){
+function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0}}
+
+function removeElementsBetweenDividers(page_id,page_element = undefined){
+  if (page_element == undefined){
+    rootelement = $("#"+page_id);
+  }
+  else{
+    rootelement = page_element;
+  }
+
   dividers = $("div.divider")
   startpos = -1
   stoppos = -1
   if( dividers.length == 1){
     stoppos = 99999999;
-    startpox = cumulativeOffset(dividers[0]).top;
+    startpox = cumulativeOffset(dividers[0], rootelement[0]).top;
   }
   if(dividers.length == 2){
     topArray = new Array();
     dividers.each(function(index){
-      topArray.push(cumulativeOffset(this).top)
+      topArray.push(cumulativeOffset(this, rootelement[0]).top)
     })
     topArray.sort(function(a,b){ if(a>b){return 1;}else{return -1} });
     startpos = topArray[0];
@@ -59,24 +72,103 @@ function removeElementsBetweenDividers(page_id){
   }
 
   toremove = new Array();
-  $(page_id).find("div.t").each(
+  topush = new Array();
+  rootelement.find("div.t").each(
     function (index){
-      pos = cumulativeOffset(this).top;
+      pos = cumulativeOffset(this,rootelement[0]).top;
       console.log(pos);
       if( startpos <pos && pos < stoppos){
           toremove.push(this);
       }
+      if (pos > stoppos ){
+          topush.push(this)
+      }
     }
   )
 
-  toremove.foreach( function(i){
-    i.remove();
-  })
+  // toremove.forEach( function(i){
+  //   console.log(i)
+  //   i.remove();
+  // })
 
-  image_holders = $("div.imageholder")
-  if (image_holders.length >= 2){
-    image_holders[1].remove()
-  }
+  image_holders = rootelement.find("div.imageholder").each(
+    function(index){
+      pos = cumulativeOffset(this,rootelement[0]).top;
+      posbot = pos + this.getBoundingClientRect().height
+      if (pos < stoppos && pos > startpos){
+        toremove.push(this);
+      }
+      else if( posbot < stoppos && posbot > startpos){
+        toremove.push(this);
+      }
+      else if ( posbot > stoppos && pos > stoppos){
+        topush.push(this);
+      }
+
+
+
+    });
+  // if (image_holders.length >= 2){
+  //   topush.push(image_holders[0]);
+  //   //image_holders[1].remove()
+  //   toremove.push(image_holders[1]);
+
+  // }
+
+  // topush.forEach( function(i){
+  //   var jqel = $(i);
+  //   if (jqel.hasClass("imageholder")){
+  //     console.log("Image Element Gotten : ");
+  //     console.log(jqel);
+  //     var current_val = Number(jqel.css("top").replace("px",""));
+  //     var new_val = current_val - ( stoppos - startpos);
+  //     jqel.css("top", String(new_val)+"px");
+  //   }
+  //   else{
+  //     var current_val = Number(jqel.css("bottom").replace("px",""));
+  //     var new_val = current_val + ( stoppos - startpos);
+  //     jqel.css("bottom", String(new_val)+"px");
+  //   }
+
+  // });
+
+
+  //original_height = rootelement.height();
+  //rootelement.height( original_height - (stoppos - startpos))
+
+  return [ toremove , topush, stoppos - startpos ]
+}
+
+function performDividerRemoveAction( rootelement , thearray ){
+  toremove = thearray[0];
+  topush = thearray[1];
+  heightDiff = thearray[2];
+
+  toremove.forEach( function(i){
+    console.log(i)
+    i.remove();
+  });
+
+  topush.forEach( function(i){
+    var jqel = $(i);
+    if (jqel.hasClass("imageholder")){
+      console.log("Image Element Gotten : ");
+      console.log(jqel);
+      var current_val = Number(jqel.css("top").replace("px",""));
+      var new_val = current_val - ( stoppos - startpos);
+      jqel.css("top", String(new_val)+"px");
+    }
+    else{
+      var current_val = Number(jqel.css("bottom").replace("px",""));
+      var new_val = current_val + ( stoppos - startpos);
+      jqel.css("bottom", String(new_val)+"px");
+    }
+
+  });
+
+  original_height = rootelement.height();
+  rootelement.height( original_height - heightDiff);
+
 }
 
 function insertContent(rootElement, items) {
@@ -98,7 +190,7 @@ function insertContent(rootElement, items) {
   const imageSource = image
     .prop("src")
     .substring(window.location.origin.length);
-  image.remove();
+  image.css("visibility", "hidden");
 
   function addImage(section, shiftAmount) {
     shiftAmount = shiftAmount || 0;
@@ -250,7 +342,11 @@ function shiftElementsDown(elements, amount) {
 function setPage(id) {
   page = "#" + id;
   pageDiv = $(page);
-  pageDiv.contextmenu(function (e) {
+
+  pageset_val = pageDiv.attr("page-set") == "true"
+
+  if( !pageset_val){
+    pageDiv.contextmenu(function (e) {
     e.preventDefault();
     const guide = $(document.createElement("div"))
       .css({
@@ -266,6 +362,7 @@ function setPage(id) {
 
     pageDiv.on({
       mousemove: function (event) {
+        console.log(event)
         guide.css({ top: event.offsetY });
       },
       click: function () {
@@ -274,11 +371,15 @@ function setPage(id) {
       },
     });
   });
+  pageDiv.attr("page-set", true)
+  }
+
 }
 
 function removeGuide(rootElement) {
   $(rootElement).children("div#guide").remove();
 }
 
+function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0;}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0;}}
 
 console.log("HI")
