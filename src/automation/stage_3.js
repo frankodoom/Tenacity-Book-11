@@ -26,6 +26,8 @@
 
 // const { root } = require("postcss");
 
+GLOBAL_ADDED_ITEM = new Array();
+
 var cumulativeOffset = function(element , tillparent = undefined) {
   var top = 0, left = 0;
   do {
@@ -81,10 +83,25 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
           toremove.push(this);
       }
       if (pos > stoppos ){
-          topush.push(this)
+          topush.push(this);
       }
     }
   )
+
+  GLOBAL_ADDED_ITEM.forEach( function (i){
+    console.log("ADDING GLOBAL ITEMS : ")
+    pos = cumulativeOffset(i[0], rootelement[0]).top;
+    console.log(pos);
+
+    if( startpos <pos && pos < stoppos){
+      //toremove.push(i);
+      console.log("Skip Reomve");
+    }
+    if (pos > stoppos ){
+        console.log("Added item");
+        topush.push(i);
+    }
+  });
 
   // toremove.forEach( function(i){
   //   console.log(i)
@@ -151,16 +168,16 @@ function performDividerRemoveAction( rootelement , thearray ){
 
   topush.forEach( function(i){
     var jqel = $(i);
-    if (jqel.hasClass("imageholder")){
+    if (!jqel.hasClass("t")){
       console.log("Image Element Gotten : ");
       console.log(jqel);
       var current_val = Number(jqel.css("top").replace("px",""));
-      var new_val = current_val - ( stoppos - startpos);
+      var new_val = current_val - ( heightDiff);
       jqel.css("top", String(new_val)+"px");
     }
     else{
       var current_val = Number(jqel.css("bottom").replace("px",""));
-      var new_val = current_val + ( stoppos - startpos);
+      var new_val = current_val + ( heightDiff );
       jqel.css("bottom", String(new_val)+"px");
     }
 
@@ -244,7 +261,6 @@ function setItemHeight(item) {
         break;
 
       case "divider":
-        item.height = 1;
         break;
 
       case "inh":
@@ -302,6 +318,7 @@ function createItemElement(item) {
     .prop("src", item.src)
     .css({ position: "absolute", height: item.height });
 
+  GLOBAL_ADDED_ITEM.push(element);
   return element;
 }
 

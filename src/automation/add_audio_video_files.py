@@ -25,6 +25,9 @@ import time
 print(os.path.abspath("."))
 
 STAGE3_JS_SCRIPT_1 = """
+
+GLOBAL_ADDED_ITEM = new Array();
+
 var cumulativeOffset = function(element , tillparent = undefined) {
   var top = 0, left = 0;
   do {
@@ -80,10 +83,25 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
           toremove.push(this);
       }
       if (pos > stoppos ){
-          topush.push(this)
+          topush.push(this);
       }
     }
   )
+
+  GLOBAL_ADDED_ITEM.forEach( function (i){
+    console.log("ADDING GLOBAL ITEMS : ")
+    pos = cumulativeOffset(i[0], rootelement[0]).top;
+    console.log(pos);
+
+    if( startpos <pos && pos < stoppos){
+      //toremove.push(i);
+      console.log("Skip Reomve");
+    }
+    if (pos > stoppos ){
+        console.log("Added item");
+        topush.push(i);
+    }
+  });
 
   // toremove.forEach( function(i){
   //   console.log(i)
@@ -92,7 +110,6 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
 
   image_holders = rootelement.find("div.imageholder").each(
     function(index){
-      console.log(this);
       pos = cumulativeOffset(this,rootelement[0]).top;
       posbot = pos + this.getBoundingClientRect().height
       if (pos < stoppos && pos > startpos){
@@ -104,6 +121,8 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
       else if ( posbot > stoppos && pos > stoppos){
         topush.push(this);
       }
+
+
 
     });
   // if (image_holders.length >= 2){
@@ -149,16 +168,16 @@ function performDividerRemoveAction( rootelement , thearray ){
 
   topush.forEach( function(i){
     var jqel = $(i);
-    if (jqel.hasClass("imageholder")){
+    if (!jqel.hasClass("t")){
       console.log("Image Element Gotten : ");
       console.log(jqel);
       var current_val = Number(jqel.css("top").replace("px",""));
-      var new_val = current_val - ( stoppos - startpos);
+      var new_val = current_val - ( heightDiff);
       jqel.css("top", String(new_val)+"px");
     }
     else{
       var current_val = Number(jqel.css("bottom").replace("px",""));
-      var new_val = current_val + ( stoppos - startpos);
+      var new_val = current_val + ( heightDiff );
       jqel.css("bottom", String(new_val)+"px");
     }
 
@@ -242,7 +261,6 @@ function setItemHeight(item) {
         break;
 
       case "divider":
-        item.height = 1;
         break;
 
       case "inh":
@@ -300,6 +318,7 @@ function createItemElement(item) {
     .prop("src", item.src)
     .css({ position: "absolute", height: item.height });
 
+  GLOBAL_ADDED_ITEM.push(element);
   return element;
 }
 
@@ -335,12 +354,6 @@ function shiftElementsDown(elements, amount) {
     const newPos = oldPos - amount;
     $(this).css("bottom", newPos);
   });
-}
-
-
-function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0;}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0;}}
-function removeGuide(rootElement) {
-  $(rootElement).children("div#guide").remove();
 }
 
 function setPage(id) {
@@ -379,6 +392,13 @@ function setPage(id) {
   }
 
 }
+
+function removeGuide(rootElement) {
+  $(rootElement).children("div#guide").remove();
+}
+
+function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0;}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0;}}
+
 """
 
 STAGE3_JS_SCRIPT_2 = """
@@ -920,8 +940,13 @@ function removeGuide(rootElement) {
            list_positions.append(px)
 
        if list_positions != []:
+          last_div = 0
           for divider in list_positions:
-             gened_json = test_vosk.generate_main_mediafilejson("", "", "div", 0, position=[self._pagenum, divider])
+             height = 1
+             if last_div == None:
+                height =  last_div  - int(divider)
+             gened_json = test_vosk.generate_main_mediafilejson("", "", "div", 0, height=height, position=[self._pagenum, int(divider)])
+             last_div = int(divider)
              if self._pagenum in self.generated_stage3json.keys():
                 self.generated_stage3json[self._pagenum].append(gened_json)
              else:
@@ -1200,7 +1225,7 @@ function removeGuide(rootElement) {
       #   """
 
        #paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ "insertContent(rootElement,"+"items.filter( function(i){ return i.type == \"divider\" ; }));"+ "reElmrem = removeElementsBetweenDividers("+f"\"{page_id}\""+");" +"subitems = items.filter( function(i){ return i.type != \"divider\" ; });if(subitems.length > 0){output_element = insertContent(rootElement, subitems );}"+"performDividerRemoveAction( $(rootElement),reElmrem);"
-       paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ "output_element = insertContent(rootElement, items.sort(sortdividers) );"+f"reElmrem = removeElementsBetweenDividers(\"{page_id}\");performDividerRemoveAction( $(rootElement),reElmrem);"
+       paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ "output_element = insertContent(rootElement, items );"+f"reElmrem = removeElementsBetweenDividers(\"{page_id}\");performDividerRemoveAction( $(rootElement),reElmrem);"
 
        print(paddd_script)
        self.driver.execute_script(
