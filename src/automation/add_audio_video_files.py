@@ -26,6 +26,8 @@ print(os.path.abspath("."))
 
 STAGE3_JS_SCRIPT_1 = """
 
+GLOBAL_ADDED_ITEM = new Array();
+
 var cumulativeOffset = function(element , tillparent = undefined) {
   var top = 0, left = 0;
   do {
@@ -44,18 +46,27 @@ var cumulativeOffset = function(element , tillparent = undefined) {
   };
 };
 
-function removeElementsBetweenDividers(page_id){
+function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0}}
+
+function removeElementsBetweenDividers(page_id,page_element = undefined){
+  if (page_element == undefined){
+    rootelement = $("#"+page_id);
+  }
+  else{
+    rootelement = page_element;
+  }
+
   dividers = $("div.divider")
   startpos = -1
   stoppos = -1
   if( dividers.length == 1){
     stoppos = 99999999;
-    startpox = cumulativeOffset(dividers[0]).top;
+    startpox = cumulativeOffset(dividers[0], rootelement[0]).top;
   }
   if(dividers.length == 2){
     topArray = new Array();
     dividers.each(function(index){
-      topArray.push(cumulativeOffset(this).top)
+      topArray.push(cumulativeOffset(this, rootelement[0]).top)
     })
     topArray.sort(function(a,b){ if(a>b){return 1;}else{return -1} });
     startpos = topArray[0];
@@ -63,24 +74,118 @@ function removeElementsBetweenDividers(page_id){
   }
 
   toremove = new Array();
-  $(page_id).find("div.t").each(
+  topush = new Array();
+  rootelement.find("div.t").each(
     function (index){
-      pos = cumulativeOffset(this).top;
+      pos = cumulativeOffset(this,rootelement[0]).top;
       console.log(pos);
       if( startpos <pos && pos < stoppos){
           toremove.push(this);
       }
+      if (pos > stoppos ){
+          topush.push(this);
+      }
     }
   )
 
-  toremove.foreach( function(i){
-    i.remove();
-  })
+  GLOBAL_ADDED_ITEM.forEach( function (i){
+    console.log("ADDING GLOBAL ITEMS : ")
+    pos = cumulativeOffset(i[0], rootelement[0]).top;
+    console.log(pos);
 
-  image_holders = $("div.imageholder")
-  if (image_holders.length >= 2){
-    image_holders[1].remove()
-  }
+    if( startpos <pos && pos < stoppos){
+      //toremove.push(i);
+      console.log("Skip Reomve");
+    }
+    if (pos > stoppos ){
+        console.log("Added item");
+        topush.push(i);
+    }
+  });
+
+  // toremove.forEach( function(i){
+  //   console.log(i)
+  //   i.remove();
+  // })
+
+  image_holders = rootelement.find("div.imageholder").each(
+    function(index){
+      pos = cumulativeOffset(this,rootelement[0]).top;
+      posbot = pos + this.getBoundingClientRect().height
+      if (pos < stoppos && pos > startpos){
+        toremove.push(this);
+      }
+      else if( posbot < stoppos && posbot > startpos){
+        toremove.push(this);
+      }
+      else if ( posbot > stoppos && pos > stoppos){
+        topush.push(this);
+      }
+
+
+
+    });
+  // if (image_holders.length >= 2){
+  //   topush.push(image_holders[0]);
+  //   //image_holders[1].remove()
+  //   toremove.push(image_holders[1]);
+
+  // }
+
+  // topush.forEach( function(i){
+  //   var jqel = $(i);
+  //   if (jqel.hasClass("imageholder")){
+  //     console.log("Image Element Gotten : ");
+  //     console.log(jqel);
+  //     var current_val = Number(jqel.css("top").replace("px",""));
+  //     var new_val = current_val - ( stoppos - startpos);
+  //     jqel.css("top", String(new_val)+"px");
+  //   }
+  //   else{
+  //     var current_val = Number(jqel.css("bottom").replace("px",""));
+  //     var new_val = current_val + ( stoppos - startpos);
+  //     jqel.css("bottom", String(new_val)+"px");
+  //   }
+
+  // });
+
+
+  //original_height = rootelement.height();
+  //rootelement.height( original_height - (stoppos - startpos))
+
+  return [ toremove , topush, stoppos - startpos ]
+}
+
+function performDividerRemoveAction( rootelement , thearray ){
+  toremove = thearray[0];
+  topush = thearray[1];
+  heightDiff = thearray[2];
+
+  toremove.forEach( function(i){
+    console.log(i)
+    i.remove();
+  });
+
+  topush.forEach( function(i){
+    var jqel = $(i);
+    if (!jqel.hasClass("t")){
+      console.log("Image Element Gotten : ");
+      console.log(jqel);
+      var current_val = Number(jqel.css("top").replace("px",""));
+      var new_val = current_val - ( heightDiff);
+      jqel.css("top", String(new_val)+"px");
+    }
+    else{
+      var current_val = Number(jqel.css("bottom").replace("px",""));
+      var new_val = current_val + ( heightDiff );
+      jqel.css("bottom", String(new_val)+"px");
+    }
+
+  });
+
+  original_height = rootelement.height();
+  rootelement.height( original_height - heightDiff);
+
 }
 
 function insertContent(rootElement, items) {
@@ -102,7 +207,7 @@ function insertContent(rootElement, items) {
   const imageSource = image
     .prop("src")
     .substring(window.location.origin.length);
-  image.remove();
+  image.css("visibility", "hidden");
 
   function addImage(section, shiftAmount) {
     shiftAmount = shiftAmount || 0;
@@ -156,7 +261,6 @@ function setItemHeight(item) {
         break;
 
       case "divider":
-        item.height = 1;
         break;
 
       case "inh":
@@ -192,8 +296,9 @@ function createItemElement(item) {
       elementdd = document.createElement("app-dictation");
       elementdd.setAttribute("title", item.title);
       elementdd.setAttribute("text", item.text);
+      elementdd.setAttribute("src", item.src)
       //elementdd.setAttribute("src", item);
-      item.type = "audio"
+      //item.type = "audio"
       element = $(elementdd)
       break
 
@@ -213,6 +318,7 @@ function createItemElement(item) {
     .prop("src", item.src)
     .css({ position: "absolute", height: item.height });
 
+  GLOBAL_ADDED_ITEM.push(element);
   return element;
 }
 
@@ -253,7 +359,11 @@ function shiftElementsDown(elements, amount) {
 function setPage(id) {
   page = "#" + id;
   pageDiv = $(page);
-  pageDiv.contextmenu(function (e) {
+
+  pageset_val = pageDiv.attr("page-set") == "true"
+
+  if( !pageset_val){
+    pageDiv.contextmenu(function (e) {
     e.preventDefault();
     const guide = $(document.createElement("div"))
       .css({
@@ -269,6 +379,7 @@ function setPage(id) {
 
     pageDiv.on({
       mousemove: function (event) {
+        console.log(event)
         guide.css({ top: event.offsetY });
       },
       click: function () {
@@ -277,11 +388,16 @@ function setPage(id) {
       },
     });
   });
+  pageDiv.attr("page-set", true)
+  }
+
 }
 
 function removeGuide(rootElement) {
   $(rootElement).children("div#guide").remove();
 }
+
+function sortdividers (a,b){ if (a.type == b.type && a.type == "divider"){return 0;}else if (a.type == "divider"){return 1;}else if(b.type == "divider"){return -1;}else{return 0;}}
 
 """
 
@@ -688,6 +804,20 @@ class PageOne(tk.Frame):
         self.add_h5pframe_button = tk.Button(self, text="Clear Stage 3 Json",command= lambda : self.clear_stage3json())
         self.add_h5pframe_button.grid(column=3, row=9)
 
+
+        #Add Dictation Button
+        self.gotoPage = tk.Button(self, text="Go To Specific Page Number", command= lambda : self.onGoToSpecificPage())
+        self.gotoPage.grid(column=1, row=10)
+
+        #Shift Media Button
+        self.shiftMedia = tk.Button(self, text="Shift Media to Next Page", command= lambda : self.shift_media_to_page(next_page=True))
+        self.shiftMedia.grid(column=1, row=11)
+
+
+        # #Add Quizz header
+        # self.add_dictation_button = tk.Button(self, text="Add Quizz Header",command= lambda : self.insert_interactionquizz_header())
+        # self.add_dictation_button.grid(column=2, row=9)
+
         #Clear Divider Button
         # nextMediaPagebtn = tk.Button(self, text="Clear Dividers" , command= lambda : self.clear_dividers() )
         # nextMediaPagebtn.grid(column=3, row=6)
@@ -714,6 +844,10 @@ class PageOne(tk.Frame):
          pass
       print("DONE WITH ")
 
+    def onGoToSpecificPage(self):
+       resultsss = simpledialog.askinteger("Select Page", "What is the Specific Page number ?")
+       if isinstance(resultsss,int) and resultsss > 0:
+          self.set_page(resultsss , False)
 
     @property
     def selectedItem(self):
@@ -732,34 +866,45 @@ class PageOne(tk.Frame):
       page_id = self.ids_list[self._pagenum][1]
       self.driver.execute_script( """
         function setPage(id) {
-          page = "#" + id;
-          pageDiv = $(page);
-          pageDiv.contextmenu(function (e) {
-            e.preventDefault();
-            const guide = $(document.createElement("div"))
-              .css({
-                position: "absolute",
-                width: "100%",
-                height: 5,
-                background: "red",
-                top: 300,
-              })
-              .prop("id", "guide");
+  page = "#" + id;
+  pageDiv = $(page);
 
-            pageDiv.append(guide);
+  pageset_val = pageDiv.attr("page-set") == "true"
 
-            pageDiv.on({
-              mousemove: function (event) {
-                guide.css({ top: event.offsetY });
-              },
-              click: function () {
-                console.log("Position:", guide.css("top"));
-                pageDiv.off("click mousemove");
-              },
-            });
-          });
-        };
-        console.log("SETTING TO PAGE " );
+  if( !pageset_val){
+    pageDiv.contextmenu(function (e) {
+    e.preventDefault();
+    const guide = $(document.createElement("div"))
+      .css({
+        position: "absolute",
+        width: "100%",
+        height: 5,
+        background: "red",
+        top: 300,
+      })
+      .prop("id", "guide");
+
+    pageDiv.append(guide);
+
+    pageDiv.on({
+      mousemove: function (event) {
+        console.log(event)
+        guide.css({ top: event.offsetY });
+      },
+      click: function () {
+        console.log("Position:", guide.css("top"));
+        pageDiv.off("click mousemove");
+      },
+    });
+  });
+  pageDiv.attr("page-set", true)
+  }
+
+}
+
+function removeGuide(rootElement) {
+  $(rootElement).children("div#guide").remove();
+}
         """ + f"setPage(\"{page_id}\")")
       WebDriverWait(self.driver, 5).until( EC.presence_of_all_elements_located((By.ID, "page" )) )
       element = self.driver.find_element( By.ID, page_id)
@@ -795,8 +940,13 @@ class PageOne(tk.Frame):
            list_positions.append(px)
 
        if list_positions != []:
+          last_div = 0
           for divider in list_positions:
-             gened_json = test_vosk.generate_main_mediafilejson("", "", "div", 0, position=[self._pagenum, divider])
+             height = 1
+             if last_div == None:
+                height =  last_div  - int(divider)
+             gened_json = test_vosk.generate_main_mediafilejson("", "", "div", 0, height=height, position=[self._pagenum, int(divider)])
+             last_div = int(divider)
              if self._pagenum in self.generated_stage3json.keys():
                 self.generated_stage3json[self._pagenum].append(gened_json)
              else:
@@ -851,7 +1001,6 @@ class PageOne(tk.Frame):
              self.result_data[self._pagenum +1][indx].append(new_filename.split("\\")[-1])
              self.result_data[self._pagenum -1][indx].append(new_filename.split("\\")[-1])
 
-
     def save_page_data (self):
        data = json.dumps(self.result_data[self._pagenum], indent=4)
        stage_3json = json.dumps(self.generated_stage3json[self._pagenum])
@@ -868,7 +1017,6 @@ class PageOne(tk.Frame):
           self.result_data[self._pagenum]= json.load(f"./saved_data/page{self._pagenum}.json")
           self.generated_stage3json[self._pagenum] = json.load(f"./saved_data/page{self._pagenum}s3.json")
           self.set_page(self._pagenum,False)
-
 
     def load_h5p (self):
        pass
@@ -992,16 +1140,6 @@ class PageOne(tk.Frame):
       #         self.generated_stage3json.update({self._pagenum : []})
       #         self.generated_stage3json[self._pagenum].append(dict_obj)
 
-
-
-
-
-
-
-
-
-
-
     def done(self):
       generated_json = None
       px = -1 # position pixels
@@ -1086,7 +1224,8 @@ class PageOne(tk.Frame):
       #   insertContent(rootElement, items);
       #   """
 
-       paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ f"output_element = insertContent(rootElement, items);"
+       #paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ "insertContent(rootElement,"+"items.filter( function(i){ return i.type == \"divider\" ; }));"+ "reElmrem = removeElementsBetweenDividers("+f"\"{page_id}\""+");" +"subitems = items.filter( function(i){ return i.type != \"divider\" ; });if(subitems.length > 0){output_element = insertContent(rootElement, subitems );}"+"performDividerRemoveAction( $(rootElement),reElmrem);"
+       paddd_script = STAGE3_JS_SCRIPT_1+ f"rootElement = document.getElementById(\"{page_id}\");"+ f"items = JSON.parse({json.dumps(items_json_string)});"+ "output_element = insertContent(rootElement, items );"+f"reElmrem = removeElementsBetweenDividers(\"{page_id}\");performDividerRemoveAction( $(rootElement),reElmrem);"
 
        print(paddd_script)
        self.driver.execute_script(
@@ -1116,7 +1255,6 @@ class PageOne(tk.Frame):
 
        self.clear_listbox_selection()
 
-
     def clear_listbox_selection(self):
        self.listbox.selection_clear(0, "end")
 
@@ -1126,8 +1264,6 @@ class PageOne(tk.Frame):
       #     if i["mediaFileName"] in self.positioned_medias and i["mediaFileName"] not in removed_set:
       #        i["position"] = None
       #  self.positioned_medias = self.positioned_medias.difference(removed_set)
-
-
 
     @selectedItem.setter
     def selectedItem(self, val):
@@ -1160,6 +1296,17 @@ class PageOne(tk.Frame):
 
     def get_unassigned_list(self):
        return [ "", "UNASSIGNED ITEMS" , "" ] + list(self.u_audio) + list(self.u_videos)
+
+    def shift_media_to_page ( self , page = False, next_page = True):
+      if self.selectedItem in self.list_items_var.get():
+        if page:
+            page_num = simpledialog.askinteger("Media Shifting", "What Page should the selected Media be shifted To ?")
+            self.result_data[page_num][0].append(self.selectedItem)
+        elif next_page:
+            self.result_data[self._pagenum + 1][0].append(self.selectedItem)
+      else:
+         messagebox.showwarning("Media Shifting", "Unable to shift media, are you sure you have selected a media file ?")
+
 
     def set_page ( self,  page , isBookPageNum = True ):
        curr_offset = 0
