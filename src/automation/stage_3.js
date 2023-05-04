@@ -56,7 +56,7 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
     rootelement = page_element;
   }
 
-  dividers = $("div.divider")
+  dividers = rootElement.find("div.divider");
   startpos = -1
   stoppos = -1
   if( dividers.length == 1){
