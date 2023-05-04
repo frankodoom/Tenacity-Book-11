@@ -56,7 +56,7 @@ function removeElementsBetweenDividers(page_id,page_element = undefined){
     rootelement = page_element;
   }
 
-  dividers = $("div.divider")
+  dividers = rootelement.find("div.divider");
   startpos = -1
   stoppos = -1
   if( dividers.length == 1){
@@ -1199,7 +1199,11 @@ function removeGuide(rootElement) {
 
        page_id = self.ids_list[self._pagenum][1]
        page_number = self._pagenum
-       page_data = self.generated_stage3json[page_number]
+       if page_number in self.generated_stage3json.keys():
+          page_data = self.generated_stage3json[page_number]
+       else:
+          messagebox.showinfo("Info", "Generated page dict does not contain page number")
+          return
 
        self.driver.refresh()
        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, page_id)))
