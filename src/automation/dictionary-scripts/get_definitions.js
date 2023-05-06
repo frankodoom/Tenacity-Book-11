@@ -7,6 +7,7 @@ const axios = require("axios").default.create({
   }
 });
 
+//const words = ['buddhist']// require("./words.json");
 const words = require("./words.json");
 const dictionary = {};
 
@@ -23,6 +24,6 @@ const dictionary = {};
   }
 
   console.log("Saving to file...");
-  fs.writeFileSync("dictionary.json", JSON.stringify(dictionary));
+  fs.writeFileSync("dictionary_temp.json", JSON.stringify(dictionary));
   console.log("Done.");
 })();

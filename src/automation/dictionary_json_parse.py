@@ -514,9 +514,17 @@ def list_of_word_to_nested_words ( words : list):
             copy_word.append(sdd)
             if isinstance(sdd,list):
               for sdd_d in sdd:
-                remove_set = set(sdd_d).union(remove_set)
-            if isinstance(sdd,str):
-              remove_set = set(sdd).union(remove_set)
+                # try:
+                #   remove_set.add( sdd_d)
+                # except:
+                #   print("ERROR: ", sdd_d, sdd)
+                if isinstance(sdd_d, list):
+                    [ remove_set.add(ekew) for ekew in sdd_d]
+                else:
+                    remove_set.add(sdd_d)
+            elif isinstance(sdd,str):
+              remove_set.add(sdd)
+
         [copy_word.remove(dls) for dls in remove_set if dls in copy_word]
 
     return copy_word, new_form
