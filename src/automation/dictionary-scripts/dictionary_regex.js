@@ -1,7 +1,8 @@
 const fs = require("fs/promises");
 const path = require("path");
 const pagesDir = String.raw`C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\pages`;
-const units = [[7, 34], [35, 63], [63, 96], [103, 125], [126, 146], [147, 166], [173, 202], [203, 226], [227, 247], [254, 271], [272, 292], [293, 306]];
+//const units = [[7, 34], [35, 63], [63, 96], [103, 125], [126, 146], [147, 166], [173, 202], [203, 226], [227, 247], [254, 271], [272, 292], [293, 306]];
+const units = [[319, 320]];
 const wordsGrouped = require("./words_grouped.json");
 //const wordsGrouped = require("./words_grouped_nestedfix.json");
 
