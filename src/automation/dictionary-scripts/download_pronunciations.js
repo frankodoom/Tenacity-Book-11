@@ -1,5 +1,5 @@
 const dictionaryPath = String.raw`C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\automation\dictionary-scripts\dictionary.json`;
-const destinationDir = String.raw`C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\audio\dictionary`;
+const destinationDir = String.raw`C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\audio\dictionary2`;
 
 const fs = require("fs");
 const dictionary = JSON.parse(fs.readFileSync(dictionaryPath));

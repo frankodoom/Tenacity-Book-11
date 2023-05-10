@@ -7,8 +7,29 @@ const axios = require("axios").default.create({
   }
 });
 
-//const words = ['buddhist']// require("./words.json");
-const words = require("./words.json");
+const words = ["observer"
+,"education"
+,"bachelor's degree"
+,"bimonthly"
+,"cut"
+,"resistant"
+, "noninfectious"
+, "snakebite"
+, "stomachache"
+, "X-ray"
+, "confined"
+, "campsite"
+, "ecolodge"
+, "Buddhist"
+, "apply"
+, "get down"
+, "get off"
+, "peal"
+, "deculturize"
+, "destructive"
+, "radio"
+]// require("./words.json");
+//const words = require("./words.json");
 const dictionary = {};
 
 (async () => {
