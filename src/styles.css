@@ -12,3 +12,52 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 html.h5p-iframe{
   overflow:hidden;
 }
+
+div.framediv::after{
+
+  font-size: 1.5rem;
+  aspect-ratio: 1/1;
+  height: 1.2em;
+  width: auto;
+  text-align: center;
+  line-height: 1.2em;
+  background: #417fc6;
+  overflow: visible;
+  position: absolute;
+  color: white;
+  left: 2.2em;
+  top: 0.8em;
+  border-radius: 0.2em;
+}
+
+div.framediv.topzero::after{
+  top:0em;
+}
+
+div.framediv.ae1::after{
+  content: "1";
+}
+div.framediv.ae2::after{
+  content: "2";
+}
+div.framediv.ae3::after{
+  content: "3";
+}
+div.framediv.ae4::after{
+  content: "4";
+}
+div.framediv.ae5::after{
+  content: "5";
+}
+div.framediv.ae6::after{
+  content: "6";
+}
+div.framediv.ae7::after{
+  content: "7";
+}
+div.framediv.ae8::after{
+  content: "8";
+}
+div.framediv.ae9::after{
+  content: "9";
+}
