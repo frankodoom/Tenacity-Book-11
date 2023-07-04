@@ -22,6 +22,7 @@ def convert_mfj_to_stage3item( mfj_json : dict):
     media_types = {
         "mp3":"audio",
         "wmv":"video",
+        "mp4":"video",
         "div":"divider", #Divider used to clear elements on the screen between two dividers
         "inh":"inh", #Inner Html
         "divider":"divider",

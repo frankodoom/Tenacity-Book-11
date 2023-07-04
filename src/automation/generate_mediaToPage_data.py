@@ -77,7 +77,7 @@ import Levenshtein as lvsh
 
 # MANUAL INPUT
 AUDIO_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\audio"
-PVIDEO_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\pvideos"
+PVIDEO_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\video"
 PAGE_FOLDER_PATH = r"C:\Users\Mubarak Salley\Documents\Accede\Tenacity-Book-11\src\assets\pages"
 
 # This Variable will be used By another python file wich imports this out
@@ -88,7 +88,7 @@ WORDS_TO_REMOVE_FROM_VIDEO_NAME = ["Increaseyourwordpower","LearningStrategies",
 MATCHING_THRESHOLD = 0.70 # a value from 0 - 1
 
 audio_files_path = glob.glob(AUDIO_FOLDER_PATH + r"\*.mp3")
-video_files_path = glob.glob(PVIDEO_FOLDER_PATH + r"\*.wmv")
+video_files_path = glob.glob(PVIDEO_FOLDER_PATH + r"\*.mp4")
 
 list_of_audio_files = []
 list_of_video_files = []
@@ -220,7 +220,7 @@ def get_list_for_page( page_number ):
                 if res > MATCHING_THRESHOLD:
                     #MATCH FOUND ADD FILE TO
                     #print(res , string_to_match, video_name)
-                    filtered_video_files.append(video_name+".wmv")
+                    filtered_video_files.append(video_name+".mp4")
 
         return filtered_audio_files, filtered_video_files
 
@@ -271,7 +271,7 @@ def get_data () :
             matched_medias.add(b)
 
     list_of_unassigned_audio = set([i+".mp3" for i in list_of_audio_files]).difference(matched_medias)
-    list_of_unassigned_video = set([i+".wmv" for i in list_of_video_files]).difference(matched_medias)
+    list_of_unassigned_video = set([i+".mp4" for i in list_of_video_files]).difference(matched_medias)
     return res_dict , list_of_unassigned_video, list_of_unassigned_audio, ids_list
 
 # %%
