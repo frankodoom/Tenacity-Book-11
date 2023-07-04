@@ -971,7 +971,7 @@ function removeGuide(rootElement) {
 
        if to_sec > from_sec and self.selectedItem != None :
           #Proceed
-          if self.selectedItem[-3:] == "wmv":
+          if self.selectedItem[-3:] == "mp4":
               filename = generate_mediaToPage_data.PVIDEO_FOLDER_PATH +"\\"+ self.selectedItem
           elif self.selectedItem[-3:] == "mp3":
               filename = generate_mediaToPage_data.AUDIO_FOLDER_PATH + "\\"+ self.selectedItem
@@ -1145,7 +1145,7 @@ function removeGuide(rootElement) {
       px = -1 # position pixels
       # Get Position
       # Create Data Structure
-      if self.selectedItem[-3:] == "wmv":
+      if self.selectedItem[-3:] == "mp4":
           filename = generate_mediaToPage_data.PVIDEO_FOLDER_PATH +"\\"+ self.selectedItem
       elif self.selectedItem[-3:] == "mp3":
           filename = generate_mediaToPage_data.AUDIO_FOLDER_PATH + "\\"+ self.selectedItem
@@ -1414,8 +1414,11 @@ thread_func()
 myframe = tk.Frame()
 
 # %%
+myframe.mainloop()
 ## COMMAND FOR SPLITTING MEDIA FILE FROM ONE TIMESTAMP TO ANOTHER
 ## ffmpeg -i "./src/assets/audio/SB11 R1 G1 P91.mp3" -acodec copy -ss 00:00:00 -t 00:00:30 "./src/assets/audio/SB11 R1 G1 P91_plus30.mp3"
 ## COMMAND FOR GETTING AUDIO DURATION
 ## ffprobe -i "./src/assets/audio/SB11 R1 G1 P91.mp3" -show_entries format=duration -v quiet -of csv="p=0" -sexagesimal
 ## duration output is in the format hours : minutes : seconds . microseconds
+
+# %%
